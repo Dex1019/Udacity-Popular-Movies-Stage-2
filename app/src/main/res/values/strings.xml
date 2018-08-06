@@ -1,0 +1,29 @@
+<resources>
+    <string name="app_name">Popular Movies</string>
+    <string name="action_settings">Settings</string>
+    <string name="label_adult_only">Adults Only</string>
+    <string name="label_runtime">Runtime</string>
+    <string name="label_reviews">Reviews</string>
+    <string name="label_visit_website">Website</string>
+    <string name="label_view_videos">Videos</string>
+    <string name="label_overview">Overview</string>
+    <string name="label_you_may_also_like">You may also like</string>
+    <string name="label_similar">Similar Movies</string>
+    <string name="label_releases_on">Releases on</string>
+    <string name="label_more">More</string>
+    <string name="label_ok">OK</string>
+
+    <string name="message_no_favorites">Looks like you haven\'t selected any favorite movies.</string>
+
+    <string-array name="entries_sortCriteria">
+        <item>Most popular</item>
+        <item>Highest rated</item>
+        <item>My favorites</item>
+    </string-array>
+
+    <string name="PREFS_NAME" translatable="false">com.example.dex.popularmovies</string>
+    <string name="PREFS_KEY_POPULAR" translatable="false">popular_movies</string>
+    <string name="PREFS_KEY_POPULAR_TIMESTAMP" translatable="false">popular_movies_timestamp</string>
+    <string name="PREFS_KEY_HIGHEST_RATED" translatable="false">highest_rated_movies</string>
+    <string name="PREFS_KEY_HIGHEST_RATED_TIMESTAMP" translatable="false">highest_rated_movies_timestamp</string>
+</resources>
