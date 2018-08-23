@@ -178,6 +178,7 @@ public class MovieDetailsFragment extends Fragment implements Callback<MovieDeta
                 .enqueue(this);
     }
 
+
     public long getMovieId() {
         if (this.movieDetails != null) {
             return this.movieDetails.getId();

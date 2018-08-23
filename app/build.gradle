@@ -23,7 +23,7 @@ android {
     }
 
     buildTypes.each {
-        it.buildConfigField 'String', "TMDBApiKey", TheMovieDbApiKey
+        it.buildConfigField 'String', "TMDBApiKey", TMDB
 
     }
 }
