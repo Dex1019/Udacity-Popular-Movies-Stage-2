@@ -71,14 +71,11 @@ public class MovieDetailsFragment extends Fragment implements Callback<MovieDeta
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         if (getArguments() != null) {
             String movieStubJson = getArguments().getString(KEY_MOVIE_STUB);
             this.movieStub = MovieStub.getInstance(movieStubJson);
-
-
         }
-
-
     }
 
     @Override
@@ -97,6 +94,7 @@ public class MovieDetailsFragment extends Fragment implements Callback<MovieDeta
         super.onResume();
 
         if (this.getActivity() instanceof MainActivity) {
+
             MainActivity activity = (MainActivity) this.getActivity();
             if ((!activity.checkDualPane()) && (activity.getSupportActionBar() != null)) {
                 activity.getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -119,6 +117,8 @@ public class MovieDetailsFragment extends Fragment implements Callback<MovieDeta
         this.dataBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_movie_details, container, false);
 
         this.fetchMovieDetails();
+        this.fetchVideoDetails();
+        this.fetchReviewDetails();
         this.fillPartialDetails(this.movieStub);
 
         Cursor cursor = this.getContext().getContentResolver().query(
@@ -178,6 +178,32 @@ public class MovieDetailsFragment extends Fragment implements Callback<MovieDeta
                 .enqueue(this);
     }
 
+    private void fetchVideoDetails() {
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(MovieDbApiRetroFitHelper.baseUrl)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        MovieDbApiRetroFitHelper movieDbApiRetroFitHelper = retrofit.create(MovieDbApiRetroFitHelper.class);
+
+        movieDbApiRetroFitHelper
+                .getVideoDetails(this.movieStub.getId())
+                .enqueue(this);
+    }
+
+    private void fetchReviewDetails() {
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(MovieDbApiRetroFitHelper.baseUrl)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        MovieDbApiRetroFitHelper movieDbApiRetroFitHelper = retrofit.create(MovieDbApiRetroFitHelper.class);
+
+        movieDbApiRetroFitHelper
+                .getReviewDetails(this.movieStub.getId())
+                .enqueue(this);
+    }
+
 
     public long getMovieId() {
         if (this.movieDetails != null) {
@@ -213,128 +239,133 @@ public class MovieDetailsFragment extends Fragment implements Callback<MovieDeta
     }
 
     private void fillDetails(final MovieDetails movie) {
-        if (this.isMovieFavorite) {
-            this.dataBinding.floatingActionButtonMovieDetailsFavorite.setImageResource(R.drawable.ic_favorite);
-        } else {
-            this.dataBinding.floatingActionButtonMovieDetailsFavorite.setImageResource(R.drawable.ic_favorite_border);
-        }
-        this.dataBinding.floatingActionButtonMovieDetailsFavorite.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                MovieDetailsFragment.this.toggleFavorite();
+        try {
+            if (this.isMovieFavorite) {
+                this.dataBinding.floatingActionButtonMovieDetailsFavorite.setImageResource(R.drawable.ic_favorite);
+            } else {
+                this.dataBinding.floatingActionButtonMovieDetailsFavorite.setImageResource(R.drawable.ic_favorite_border);
             }
-        });
-
-        if (movie.getVideos().getResults().isEmpty() || (this.getVideoUrl(movie) == null)) {
-            this.dataBinding.imageButtonMovieDetailsVideos.setVisibility(View.GONE);
-        } else {
-            this.dataBinding.imageButtonMovieDetailsVideos.setOnClickListener(new View.OnClickListener() {
+            this.dataBinding.floatingActionButtonMovieDetailsFavorite.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public void onClick(View view) {
-                    Helper.openYouTubeVideo(MovieDetailsFragment.this.getVideoUrl(movie), MovieDetailsFragment.this.getContext());
+                public void onClick(View v) {
+                    MovieDetailsFragment.this.toggleFavorite();
                 }
             });
-        }
 
-        this.dataBinding.textViewMovieDetailsOverview.setText(movie.getOverview());
-
-        this.dataBinding.linearLayoutMovieDetailsAdult.setVisibility(movie.isAdult() ? View.VISIBLE : View.GONE);
-
-        this.dataBinding.textViewMovieDetailsRuntime.setText(String.valueOf(movie.getRuntime()));
-
-        if (movie.getReviews().getResults().isEmpty()) {
-            this.dataBinding.linearLayoutMovieDetailsReviews.setVisibility(View.GONE);
-        } else {
-            this.dataBinding.linearLayoutMovieDetailsReviews.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    MovieDetailsFragment.this.showReviews();
-                }
-            });
-        }
-
-        if ((movie.getHomepage() == null) || movie.getHomepage().trim().isEmpty()) {
-            this.dataBinding.linearLayoutMovieDetailsWebsite.setVisibility(View.GONE);
-        } else {
-            this.dataBinding.linearLayoutMovieDetailsWebsite.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    Helper.openUrlInBrowser(
-                            movie.getHomepage(),
-                            view.getContext()
-                    );
-                }
-            });
-        }
-
-        if (movie.getVideos().getResults().isEmpty()) {
-            this.dataBinding.linearLayoutMovieDetailsVideos.setVisibility(View.GONE);
-        } else {
-            this.dataBinding.linearLayoutMovieDetailsVideos.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    MovieDetailsFragment.this.showVideos();
-                }
-            });
-        }
-
-        this.dataBinding.textViewMovieDetailsReleaseDate.setText(movie.getReleaseDate());
-
-        this.dataBinding.ratingBarMovieDetailsRating.setRating((float) (movie.getAverageVote() / 2.0d));
-
-        this.dataBinding.textViewMovieDetailsRating.setText(String.format(Locale.getDefault(), "%.1f (%d)", ((float) (movie.getAverageVote() / 2.0d)), movie.getNumberOfVotes()));
-
-        this.dataBinding.recyclerViewMovieDetailsGenres.setLayoutManager(new LinearLayoutManager(
-                this.dataBinding.recyclerViewMovieDetailsGenres.getContext(),
-                LinearLayoutManager.HORIZONTAL,
-                false
-        ));
-        this.dataBinding.recyclerViewMovieDetailsGenres.setAdapter(new GenreAdapter(movie.getGenres(), new ListItemClickListener() {
-            @Override
-            public void onItemClick(int position) {
-                Toast.makeText(getContext(), String.format(Locale.getDefault(), "%s selected", movie.getGenres().get(position).getName()), Toast.LENGTH_SHORT).show();
+            if (movie.getVideos().getResults().isEmpty() || (this.getVideoUrl(movie) == null)) {
+                this.dataBinding.imageButtonMovieDetailsVideos.setVisibility(View.GONE);
+            } else {
+                this.dataBinding.imageButtonMovieDetailsVideos.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        Helper.openYouTubeVideo(MovieDetailsFragment.this.getVideoUrl(movie), MovieDetailsFragment.this.getContext());
+                    }
+                });
             }
-        }));
 
-        this.dataBinding.recyclerViewMovieDetailsSimilarMovies.setHasFixedSize(true);
-        this.dataBinding.recyclerViewMovieDetailsSimilarMovies.setNestedScrollingEnabled(false);
-        this.dataBinding.recyclerViewMovieDetailsSimilarMovies.setLayoutManager(new LinearLayoutManager(
-                this.dataBinding.recyclerViewMovieDetailsSimilarMovies.getContext(),
-                LinearLayoutManager.HORIZONTAL,
-                false
-        ));
-        this.dataBinding.recyclerViewMovieDetailsSimilarMovies.setAdapter(new TitledMoviesAdapter(
-                movie.getSimilarMovies().getResults(),
-                new ListItemClickListener() {
-                    @Override
-                    public void onItemClick(int position) {
-                        MovieDetailsFragment.this.fragmentInteractionListener.onFragmentInteraction(Helper.generateMessage(
-                                OnFragmentInteractionListener.TAG_MOVIE,
-                                movie.getSimilarMovies().getResults().get(position).toString()
-                        ));
-                    }
-                }
-        ));
+            this.dataBinding.textViewMovieDetailsOverview.setText(movie.getOverview());
 
-        this.dataBinding.recyclerViewMovieDetailsRecommendedMovies.setHasFixedSize(true);
-        this.dataBinding.recyclerViewMovieDetailsRecommendedMovies.setNestedScrollingEnabled(false);
-        this.dataBinding.recyclerViewMovieDetailsRecommendedMovies.setLayoutManager(new LinearLayoutManager(
-                this.dataBinding.recyclerViewMovieDetailsRecommendedMovies.getContext(),
-                LinearLayoutManager.HORIZONTAL,
-                false
-        ));
-        this.dataBinding.recyclerViewMovieDetailsRecommendedMovies.setAdapter(new TitledMoviesAdapter(
-                movie.getRecommendations().getResults(),
-                new ListItemClickListener() {
+            this.dataBinding.linearLayoutMovieDetailsAdult.setVisibility(movie.isAdult() ? View.VISIBLE : View.GONE);
+
+            this.dataBinding.textViewMovieDetailsRuntime.setText(String.valueOf(movie.getRuntime()));
+
+            if (movie.getReviews().getResults().isEmpty()) {
+                this.dataBinding.linearLayoutMovieDetailsReviews.setVisibility(View.GONE);
+            } else {
+                this.dataBinding.linearLayoutMovieDetailsReviews.setOnClickListener(new View.OnClickListener() {
                     @Override
-                    public void onItemClick(int position) {
-                        MovieDetailsFragment.this.fragmentInteractionListener.onFragmentInteraction(Helper.generateMessage(
-                                OnFragmentInteractionListener.TAG_MOVIE,
-                                movie.getRecommendations().getResults().get(position).toString()
-                        ));
+                    public void onClick(View view) {
+                        MovieDetailsFragment.this.showReviews();
                     }
+                });
+            }
+
+            if ((movie.getHomepage() == null) || movie.getHomepage().trim().isEmpty()) {
+                this.dataBinding.linearLayoutMovieDetailsWebsite.setVisibility(View.GONE);
+            } else {
+                this.dataBinding.linearLayoutMovieDetailsWebsite.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        Helper.openUrlInBrowser(
+                                movie.getHomepage(),
+                                view.getContext()
+                        );
+                    }
+                });
+            }
+
+            if (movie.getVideos().getResults().isEmpty()) {
+                this.dataBinding.linearLayoutMovieDetailsVideos.setVisibility(View.GONE);
+            } else {
+                this.dataBinding.linearLayoutMovieDetailsVideos.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        MovieDetailsFragment.this.showVideos();
+                    }
+                });
+            }
+
+            this.dataBinding.textViewMovieDetailsReleaseDate.setText(movie.getReleaseDate());
+
+            this.dataBinding.ratingBarMovieDetailsRating.setRating((float) (movie.getAverageVote() / 2.0d));
+
+            this.dataBinding.textViewMovieDetailsRating.setText(String.format(Locale.getDefault(), "%.1f (%d)", ((float) (movie.getAverageVote() / 2.0d)), movie.getNumberOfVotes()));
+
+            this.dataBinding.recyclerViewMovieDetailsGenres.setLayoutManager(new LinearLayoutManager(
+                    this.dataBinding.recyclerViewMovieDetailsGenres.getContext(),
+                    LinearLayoutManager.HORIZONTAL,
+                    false
+            ));
+            this.dataBinding.recyclerViewMovieDetailsGenres.setAdapter(new GenreAdapter(movie.getGenres(), new ListItemClickListener() {
+                @Override
+                public void onItemClick(int position) {
+                    Toast.makeText(getContext(), String.format(Locale.getDefault(), "%s selected", movie.getGenres().get(position).getName()), Toast.LENGTH_SHORT).show();
                 }
-        ));
+            }));
+
+            this.dataBinding.recyclerViewMovieDetailsSimilarMovies.setHasFixedSize(true);
+            this.dataBinding.recyclerViewMovieDetailsSimilarMovies.setNestedScrollingEnabled(false);
+            this.dataBinding.recyclerViewMovieDetailsSimilarMovies.setLayoutManager(new LinearLayoutManager(
+                    this.dataBinding.recyclerViewMovieDetailsSimilarMovies.getContext(),
+                    LinearLayoutManager.HORIZONTAL,
+                    false
+            ));
+            this.dataBinding.recyclerViewMovieDetailsSimilarMovies.setAdapter(new TitledMoviesAdapter(
+                    movie.getSimilarMovies().getResults(),
+                    new ListItemClickListener() {
+                        @Override
+                        public void onItemClick(int position) {
+                            MovieDetailsFragment.this.fragmentInteractionListener.onFragmentInteraction(Helper.generateMessage(
+                                    OnFragmentInteractionListener.TAG_MOVIE,
+                                    movie.getSimilarMovies().getResults().get(position).toString()
+                            ));
+                        }
+                    }
+            ));
+
+            this.dataBinding.recyclerViewMovieDetailsRecommendedMovies.setHasFixedSize(true);
+            this.dataBinding.recyclerViewMovieDetailsRecommendedMovies.setNestedScrollingEnabled(false);
+            this.dataBinding.recyclerViewMovieDetailsRecommendedMovies.setLayoutManager(new LinearLayoutManager(
+                    this.dataBinding.recyclerViewMovieDetailsRecommendedMovies.getContext(),
+                    LinearLayoutManager.HORIZONTAL,
+                    false
+            ));
+            this.dataBinding.recyclerViewMovieDetailsRecommendedMovies.setAdapter(new TitledMoviesAdapter(
+                    movie.getRecommendations().getResults(),
+                    new ListItemClickListener() {
+                        @Override
+                        public void onItemClick(int position) {
+                            MovieDetailsFragment.this.fragmentInteractionListener.onFragmentInteraction(Helper.generateMessage(
+                                    OnFragmentInteractionListener.TAG_MOVIE,
+                                    movie.getRecommendations().getResults().get(position).toString()
+                            ));
+                        }
+                    }
+            ));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -356,11 +387,13 @@ public class MovieDetailsFragment extends Fragment implements Callback<MovieDeta
         }
     }
 
+
     @Override
     public void onFailure(Call<MovieDetails> call, Throwable t) {
         Toast.makeText(this.dataBinding.getRoot().getContext(), "Network failure", Toast.LENGTH_SHORT).show();
         this.dismissProgressDialog();
     }
+
 
     private String getVideoUrl(MovieDetails movie) {
         ArrayList<Video> videos = movie.getVideos().getResults();

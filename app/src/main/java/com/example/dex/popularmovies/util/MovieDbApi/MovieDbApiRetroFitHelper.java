@@ -10,6 +10,7 @@ import retrofit2.http.Query;
 
 
 public interface MovieDbApiRetroFitHelper {
+
     String baseUrl = "https://api.themoviedb.org/";
 
     @GET("/3/movie/popular?api_key=" + BuildConfig.TMDBApiKey)
@@ -17,6 +18,12 @@ public interface MovieDbApiRetroFitHelper {
 
     @GET("/3/movie/top_rated?api_key=" + BuildConfig.TMDBApiKey)
     Call<com.example.dex.popularmovies.model.data.MovieList> getHighestRatedMovies(@Query("page") long page);
+
+    @GET("/3/movie/{movieId}/videos?api_key=" + BuildConfig.TMDBApiKey)
+    Call<com.example.dex.popularmovies.model.data.MovieDetails> getVideoDetails(@Path("movieId") long movieId);
+
+    @GET("/3/movie/{movieId}/reviews?api_key=" + BuildConfig.TMDBApiKey)
+    Call<com.example.dex.popularmovies.model.data.MovieDetails> getReviewDetails(@Path("movieId") long movieId);
 
     @GET("/3/movie/{movieId}?api_key=" + BuildConfig.TMDBApiKey + "&append_to_response=videos,images,reviews,recommendations,similar_movies")
     Call<com.example.dex.popularmovies.model.data.MovieDetails> getMovieDetails(@Path("movieId") long movieId);
